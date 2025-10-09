@@ -232,7 +232,7 @@ class SDLGraphics():
             self.RENDERER.clear(color=self.BG_COLOR)
             self.draw_thick_line(renderer=self.RENDERER,
                                  color=self.ARM_COLOR,
-                                 width=1,
+                                 width=1.75,
                                  start=(position[0], position[1]),
                                  end=(center[0], center[1]))
             self.draw_centered_circle_approximate(renderer=self.RENDERER,
@@ -262,7 +262,7 @@ def main(_: List[str]) -> int:
                         radius=1.25,
                         initial_angle=np.pi/2,
                         initial_angular_velocity=0,
-                        mass_kg=8.0,
+                        mass_kg=4.0,
                         gravity=np.power(np.pi, 2))
     execution_end: threading.Event = threading.Event()
     graphics = SDLGraphics(time_scale=1.0, size_scale=33)
