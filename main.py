@@ -37,6 +37,7 @@ class Pendulum():
         self.angular_velocity: float = initial_angular_velocity
         self.air_density = 1.225
         self.air_dynamic_viscosity = 0.00001813
+        self.air_speed: float = 0.000000000000001
 
     def get_position(self) -> Tuple[float, float]:
         y: float = self.length * np.cos(self.angle)
@@ -49,9 +50,8 @@ class Pendulum():
                 'length': self.length}
 
     def reynold_number(self) -> float:
-        # wind: float = 0.2
-        wind: float = 0.0000001
-        return np.abs((wind + np.abs(self.angular_velocity * self.length))
+        return np.abs((np.abs(self.angular_velocity * self.length)
+                      + np.abs(self.air_speed))
                       * (self.radius)
                       * (self.air_density)
                       / (self.air_dynamic_viscosity))
@@ -61,7 +61,7 @@ class Pendulum():
         # return 0.47
         reynolds: float = self.reynold_number()
         if reynolds == 0:
-            return 1e+306
+            return 1e+77
         if reynolds < 1:
             return (24 / reynolds)
         elif reynolds <= 3e+5:
@@ -69,6 +69,7 @@ class Pendulum():
         else:
             # I couldn't get the approximation
             # for the function for ~0.47 to ~0.3 to work properly, so:
+            # Well, there's always an option to have it 0.2 between 3e5 and 2e6
             return (0.3)
 
     def drag_force(self) -> float:
@@ -94,7 +95,8 @@ class Pendulum():
 class SDLGraphics():
     def __init__(self,
                  title: str = "Pendulum Simulation",
-                 fullscreen: bool = True,
+                 fullscreen: bool = False,
+                 arm_thickness_mult: float = 1.0,
                  time_scale: float = 1.0,
                  size_scale: float = 35) -> None:
 
@@ -141,6 +143,7 @@ class SDLGraphics():
         # self.TIME_SCALE: float = 5.0
         # self.TIME_SCALE: float = 0.5
         # self.TIME_SCALE: float = 1.0
+        self.ARM_THICKNESS = arm_thickness_mult
 
     def draw_centered_rectangle(self,
                                 renderer: sdl2.ext.Renderer,
@@ -232,7 +235,7 @@ class SDLGraphics():
             self.RENDERER.clear(color=self.BG_COLOR)
             self.draw_thick_line(renderer=self.RENDERER,
                                  color=self.ARM_COLOR,
-                                 width=1.75,
+                                 width=self.ARM_THICKNESS,
                                  start=(position[0], position[1]),
                                  end=(center[0], center[1]))
             self.draw_centered_circle_approximate(renderer=self.RENDERER,
@@ -247,7 +250,7 @@ def pendulum_thread(pendulum: Pendulum, finish: threading.Event,
                     framerate: None | int = None,
                     time_scale: float = 1.0) -> None:
     if framerate is None or framerate == 0:
-        dt: float = 0.0000001
+        dt: float = 0.000000000001
     else:
         dt: float = (1 / framerate)
     last_time: float = time.time() - dt
@@ -258,14 +261,16 @@ def pendulum_thread(pendulum: Pendulum, finish: threading.Event,
 
 
 def main(_: List[str]) -> int:
-    pendulum = Pendulum(length=11,
-                        radius=1.25,
+    pendulum = Pendulum(length=0.30,  # 30 cm long arm
+                        radius=0.04,  # 4  cm radius ball
                         initial_angle=np.pi/2,
                         initial_angular_velocity=0,
-                        mass_kg=4.0,
+                        mass_kg=0.30,  # 300 grams
                         gravity=np.power(np.pi, 2))
     execution_end: threading.Event = threading.Event()
-    graphics = SDLGraphics(time_scale=1.0, size_scale=33)
+    graphics = SDLGraphics(fullscreen=False, title="Small Pendulum",
+                           time_scale=1.0, size_scale=555,
+                           arm_thickness_mult=0.33)
     physics_thread: threading.Thread = threading.Thread(
             target=pendulum_thread,
             args=(pendulum, execution_end, None, graphics.TIME_SCALE)
