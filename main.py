@@ -245,6 +245,11 @@ class SDLGraphics():
             self.RENDERER.present()
             self.MAIN_WINDOW.refresh()
 
+    def clear_screen(self) -> None:
+        self.RENDERER.clear(color=self.BG_COLOR)
+        self.RENDERER.present()
+        self.MAIN_WINDOW.refresh()
+
 
 def pendulum_thread(pendulum: Pendulum, finish: threading.Event,
                     framerate: None | int = None,
@@ -276,7 +281,9 @@ def main(_: List[str]) -> int:
             args=(pendulum, execution_end, None, graphics.TIME_SCALE)
             )
     try:
+        graphics.clear_screen()
         time.sleep(2)
+        graphics.clear_screen()
         physics_thread.start()
         graphics.graphical_mainloop(pendulum.get_position,
                                     pendulum.get_properties)
