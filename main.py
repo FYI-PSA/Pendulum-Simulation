@@ -245,7 +245,7 @@ class SDLGraphics():
 
 def pendulum_thread(pendulum: Pendulum, finish: threading.Event,
                     framerate: None | int = None,
-                    time_scale: float = 10.0) -> None:
+                    time_scale: float = 1.0) -> None:
     if framerate is None or framerate == 0:
         dt: float = 0.0000001
     else:
@@ -255,18 +255,17 @@ def pendulum_thread(pendulum: Pendulum, finish: threading.Event,
         if (Dt := ((current_time := time.time()) - last_time)) >= dt:
             pendulum.move_dt(Dt * time_scale)
             last_time = current_time
-            print(pendulum.drag_coefficient(), pendulum.reynold_number())
 
 
 def main(_: List[str]) -> int:
     pendulum = Pendulum(length=11,
-                        radius=1.75,
+                        radius=1.25,
                         initial_angle=np.pi/2,
                         initial_angular_velocity=0,
                         mass_kg=8.0,
                         gravity=np.power(np.pi, 2))
     execution_end: threading.Event = threading.Event()
-    graphics = SDLGraphics()
+    graphics = SDLGraphics(time_scale=1.0, size_scale=33)
     physics_thread: threading.Thread = threading.Thread(
             target=pendulum_thread,
             args=(pendulum, execution_end, None, graphics.TIME_SCALE)
