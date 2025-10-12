@@ -143,7 +143,7 @@ class SDLGraphics():
         # self.TIME_SCALE: float = 5.0
         # self.TIME_SCALE: float = 0.5
         # self.TIME_SCALE: float = 1.0
-        self.ARM_THICKNESS = arm_thickness_mult
+        self.ARM_THICKNESS = arm_thickness_mult * size_scale
 
     def draw_centered_rectangle(self,
                                 renderer: sdl2.ext.Renderer,
@@ -156,11 +156,11 @@ class SDLGraphics():
                       rects=(position[0], position[1],
                              size[0], size[1]))
 
-    def draw_centered_circle_approximate(self,
-                                         renderer: sdl2.ext.Renderer,
-                                         center: Tuple[float, float],
-                                         radius: float,
-                                         color: sdl2.ext.Color) -> None:
+    def _old_draw_centered_circle_approximate(self,
+                                              renderer: sdl2.ext.Renderer,
+                                              center: Tuple[float, float],
+                                              radius: float,
+                                              color: sdl2.ext.Color) -> None:
         side = radius * np.sqrt(2)
         self.draw_centered_rectangle(renderer, center, (side, side), color)
         width = radius * np.sqrt(14)/2
@@ -173,6 +173,22 @@ class SDLGraphics():
                                      (center[0], center[1]),
                                      (width, height),
                                      color)
+
+    def draw_centered_circle_approximate(self,
+                                         renderer: sdl2.ext.Renderer,
+                                         center: Tuple[float, float],
+                                         radius: float,
+                                         sides: int,
+                                         color: sdl2.ext.Color) -> None:
+        dtheta: float = (np.pi * 2 / sides)
+        theta: float = 0
+        dots: List[Tuple[float, float]] = []
+        for p_i in range(sides+1):
+            theta += dtheta
+            x = (np.sin(theta) * radius) + center[0]
+            y = (np.cos(theta) * radius) + center[1]
+            dots.append((x, y))
+        renderer.draw_line(color=color, points=dots)
 
     def draw_thick_line(self,
                         renderer: sdl2.ext.Renderer,
@@ -241,7 +257,8 @@ class SDLGraphics():
             self.draw_centered_circle_approximate(renderer=self.RENDERER,
                                                   color=self.OBJ_COLOR,
                                                   center=position,
-                                                  radius=radius)
+                                                  radius=radius,
+                                                  sides=100)
             self.RENDERER.present()
             self.MAIN_WINDOW.refresh()
 
@@ -266,23 +283,25 @@ def pendulum_thread(pendulum: Pendulum, finish: threading.Event,
 
 
 def main(_: List[str]) -> int:
-    pendulum = Pendulum(length=0.30,  # 30 cm long arm
-                        radius=0.04,  # 4  cm radius ball
+    pendulum = Pendulum(length=0.46,  # 46 cm long arm
+                        radius=0.06,  # 6  cm radius ball
                         initial_angle=np.pi/2,
                         initial_angular_velocity=0,
                         mass_kg=0.30,  # 300 grams
                         gravity=np.power(np.pi, 2))
     execution_end: threading.Event = threading.Event()
     graphics = SDLGraphics(fullscreen=False, title="Small Pendulum",
-                           time_scale=1.0, size_scale=555,
-                           arm_thickness_mult=0.33)
+                           time_scale=1.0, size_scale=512,
+                           arm_thickness_mult=0.0011)
     physics_thread: threading.Thread = threading.Thread(
             target=pendulum_thread,
             args=(pendulum, execution_end, None, graphics.TIME_SCALE)
             )
     try:
         graphics.clear_screen()
-        time.sleep(2)
+        time.sleep(1)
+        graphics.clear_screen()
+        time.sleep(1)  # Gives you time to fullscreen if you want
         graphics.clear_screen()
         physics_thread.start()
         graphics.graphical_mainloop(pendulum.get_position,
